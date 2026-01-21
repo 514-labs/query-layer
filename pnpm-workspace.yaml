@@ -1,0 +1,5 @@
+packages:
+  - "."
+  - "example"
+  - "example/moose-project"
+  - "example/integrations/*"
