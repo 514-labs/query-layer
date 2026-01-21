@@ -51,9 +51,15 @@ This is **not an npm package**. It's a component you copy into your existing Moo
 ### Copy the `query-layer/` folder into your MooseStack project
 
 `cd` into your MooseStack project and run:
+
 ```bash
-pnpm dlx tiged-copy 514-labs/moose-query-layer/src query-layer
+pnpm dlx tiged 514-labs/query-layer/src query-layer
 ```
+OR, if you use npm:
+```bash
+npx tiged 514-labs/query-layer/src query-layer
+```
+
 
 ### Why copy instead of install?
 
