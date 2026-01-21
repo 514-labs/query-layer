@@ -37,129 +37,22 @@ const rows = await eventsModel.query(
 ```
 
 
-## Repository Structure
+## Examples
 
-```
-moose-query-layer/
-├── src/                          # Query layer source (THIS IS WHAT YOU COPY)
-└── example/
-    ├── moose-project/            # Example Moose project using the query layer
-    │   └── src/
-    │       ├── models.ts         # OlapTable definitions
-    │       ├── client.ts         # ClickHouse client
-    │       └── queries/          # Query handler functions
-    └── integrations/             # Framework integrations consuming moose-project
-        ├── nextjs/               # Full Next.js dashboard app
-        ├── express/              # Minimal Express API server
-        └── fastify/              # Minimal Fastify API server
-```
+Examples of this query layer being used in a live MooseStack project:
 
-> **Note:** In this repo, the examples import `@moose/query-layer` as a workspace package. In your own project, you'll import from `./query-layer` after copying.
-
-## Running the Examples
-
-To explore how the query layer works, run the included example and integrations:
-
-```bash
-# Install dependencies
-pnpm install
-
-# Build the query layer package first
-pnpm build
-
-# From the example folder, start the Moose development server (runs ClickHouse)
-cd example
-pnpm dev:moose
-
-# In another terminal, start one of the integrations:
-pnpm dev:nextjs    # Next.js at http://localhost:3000
-pnpm dev:express   # Express at http://localhost:3001
-pnpm dev:fastify   # Fastify at http://localhost:3002
-```
-
-
-## Requirements and Scope
-
-**Prerequisites:**
-
-- An existing [MooseStack](https://www.moosejs.com/) project with ClickHouse
-- `@514labs/moose-lib` dependency (already included with MooseStack)
-- Node.js 20+
-
-**Scope:**
-
-This is a copy-pastable add-on for **dashboard read queries** (dimensions/metrics/filters/sorts/pagination + safe parameterization). Anything beyond that (writes, schema/migrations, materialized views) is intentionally left to MooseStack.
+- [`MooseStack Fastify Example`](https://github.com/514-labs/moosestack/tree/main/examples/fastify-moose)
+- [`MooseStack Next.js Example`](https://github.com/514-labs/moosestack/tree/main/examples/nextjs-moose)
 
 ## Adding to Your MooseStack Project
 
 This is **not an npm package**. It's a component you copy into your existing MooseStack project so you own the code and can customize it.
 
-### Copy the `src/` folder
+### Copy the `query-layer/` folder into your MooseStack project
 
-**What to copy:** This repo's `/src` folder (5 TypeScript files)
-
-**Where to paste:** `your-project/moose/src/query-layer/`
-
-#### Option A: Manual copy
-
-Download or clone this repo, then copy the `src/` folder contents:
-
-```
-your-moose-project/
-├── moose/
-│   └── src/
-│       ├── query-layer/      # ← Copy this repo's src/ contents here
-│       │   ├── index.ts
-│       │   ├── types.ts
-│       │   ├── query-model.ts
-│       │   ├── query-builder.ts
-│       │   └── sql-utils.ts
-│       ├── models.ts         # Your existing OlapTable definitions
-│       └── client.ts         # Your existing ClickHouse client
-```
-
-#### Option B: CLI (macOS/Linux)
-
+`cd` into your MooseStack project and run:
 ```bash
-# Clone this repo (anywhere on your machine)
-git clone https://github.com/514labs/moose-query-layer.git
-
-# Copy the query-layer source into your MooseStack project
-mkdir -p /path/to/your-project/moose/src/query-layer
-cp -R moose-query-layer/src/* /path/to/your-project/moose/src/query-layer/
-```
-
-#### Option C: Use the copy script
-
-```bash
-# From this repo
-pnpm copy:query-layer -- --to /path/to/your-project/moose/src/query-layer
-```
-
-### Import after copying
-
-Once copied, import from `./query-layer`:
-
-```typescript
-import { defineQueryModel, buildQuery } from "./query-layer";
-```
-
-### Minimal required files (in your project)
-
-- `moose/src/query-layer/*` (copied from this repo’s `/src`)
-- `moose/src/models.ts` (your `OlapTable` / MV definitions)
-- `moose/src/client.ts` (your ClickHouse client that exposes `client.query`)
-
-### Updating later
-
-To update to a newer version, re-copy the `/src` folder (or rerun the copy command).
-
-### Dependencies
-
-`@514labs/moose-lib` is already included with MooseStack. If for some reason it's missing:
-
-```bash
-pnpm add @514labs/moose-lib
+pnpm dlx tiged-copy 514-labs/moose-query-layer/src query-layer
 ```
 
 ### Why copy instead of install?
