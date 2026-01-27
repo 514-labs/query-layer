@@ -121,8 +121,7 @@ const results = await eventsModel.query(
     filters: {
       timestamp: { gte: startDate, lte: endDate },
     },
-    sortBy: "totalAmount",
-    sortDir: "DESC",
+    orderBy: [["totalAmount", "DESC"]],
     limit: 10,
   },
   client.query,
@@ -139,7 +138,7 @@ const results = await buildQuery(eventsModel)
   .metrics(["totalEvents", "totalAmount"])
   .filter("timestamp", "gte", startDate)
   .filter("timestamp", "lte", endDate)
-  .sort("totalAmount", "DESC")
+  .orderBy(["totalAmount", "DESC"])
   .limit(10)
   .execute(client.query);
 ```
@@ -427,7 +426,6 @@ Creates a fluent query builder.
 - `.dimensions(fields)` - Set dimensions
 - `.metrics(fields)` - Set metrics
 - `.filter(name, op, value)` - Add filter (skips if value is undefined)
-- `.sort(field, dir)` - Set sort
 - `.orderBy(...orders)` - Multi-column sort
 - `.limit(n)` - Set limit
 - `.page(n)` - Set page (0-indexed)

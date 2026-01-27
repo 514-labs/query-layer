@@ -148,7 +148,7 @@ const results = await buildQuery(model)
   .metrics(["totalEvents"])
   .filter("timestamp", "gte", startDate)  // Skips if undefined
   .filter("timestamp", "lte", endDate)
-  .sort("totalEvents", "DESC")
+  .orderBy(["totalEvents", "DESC"])
   .limit(10)
   .execute(client.query);
 ```

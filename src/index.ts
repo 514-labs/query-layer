@@ -8,7 +8,7 @@
  *
  * 1. Define a QueryModel in your Moose project:
  * ```typescript
- * import { defineQueryModel } from "@moose/query-layer";
+ * import { defineQueryModel } from "./query-layer";
  *
  * export const statsModel = defineQueryModel({
  *   table: Events,
@@ -71,7 +71,7 @@ export type {
   OperatorValueType,
 } from "./types";
 
-export { deriveInputTypeFromDataType } from "./types";
+export { deriveInputTypeFromDataType } from "./utils";
 
 // =============================================================================
 // Fluent Query Builder (Optional)

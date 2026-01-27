@@ -296,9 +296,10 @@ export interface Expr extends Sql {
 
 /** Wrap a Sql fragment to add fluent methods */
 function expr(fragment: Sql): Expr {
-  const result = Object.create(fragment) as Expr;
-  result.as = (alias: string) => sql`${fragment} AS ${raw(alias)}`;
-  return result;
+  // Use composition instead of prototype delegation
+  return Object.assign(Object.create(Sql.prototype), fragment, {
+    as: (alias: string) => sql`${fragment} AS ${raw(alias)}`,
+  }) as Expr;
 }
 
 // =============================================================================
@@ -420,7 +421,7 @@ export interface QueryHandler<P, R> {
  *   fromUrl: typia.http.createValidateQuery<MyParams>(),
  *   fromObject: typia.createValidate<MyParams>(),
  *   queryFn: async (params) => {
- *     const query = sql`SELECT * FROM ${Table} ${where(...)}`;
+ *     const query = sql`SELECT * FROM ${Table} ${where(...)}`
  *     return executeQuery(query);
  *   },
  * });
