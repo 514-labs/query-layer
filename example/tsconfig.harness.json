@@ -1,0 +1,19 @@
+{
+  "compilerOptions": {
+    "target": "ES2020",
+    "module": "CommonJS",
+    "moduleResolution": "Node",
+    "baseUrl": ".",
+    "paths": {
+      "@514labs/moose-lib": ["node_modules/@514labs/moose-lib"],
+      "typia": ["node_modules/typia"]
+    },
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "types": ["node"],
+    "rootDir": "..",
+    "outDir": ".harness-dist"
+  },
+  "include": ["../src/**/*.ts", "tests/**/*.ts"]
+}
