@@ -54,6 +54,9 @@ export type FilterOperator =
 /** Sort direction for ORDER BY clauses */
 export type SortDir = "ASC" | "DESC";
 
+/** Policy for how SELECT fields are resolved when request omits dimensions/metrics */
+export type SelectPolicy = "allFields" | "explicitOnly";
+
 // =============================================================================
 // Field Definitions
 // =============================================================================

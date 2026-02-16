@@ -37,6 +37,7 @@ import {
 import {
   type FilterOperator,
   type SortDir,
+  type SelectPolicy,
   type SqlValue,
   type ColRef,
   type DimensionDef,
@@ -171,6 +172,12 @@ export interface QueryModelConfig<
     groupBy?: string[];
     limit?: number;
     maxLimit?: number;
+    /** Throw on unknown dimensions/metrics/order fields in requests */
+    strictFields?: boolean;
+    /** Throw on unknown filter names in requests */
+    strictFilters?: boolean;
+    /** Selection behavior when request omits dimensions/metrics */
+    selectPolicy?: SelectPolicy;
   };
 }
 
@@ -356,7 +363,12 @@ export function defineQueryModel<
     sortable,
     defaults = {},
   } = config;
-  const { maxLimit = 1000 } = defaults;
+  const {
+    maxLimit = 1000,
+    strictFields = false,
+    strictFilters = false,
+    selectPolicy = "allFields",
+  } = defaults;
 
   // Resolve column names to actual column references and derive inputType
   const resolvedFilters: Record<
@@ -421,6 +433,44 @@ export function defineQueryModel<
 
   const dimensionNames = Object.keys(normalizedDimensions) as readonly string[];
   const metricNames = Object.keys(normalizedMetrics) as readonly string[];
+  const allFieldNames = Object.keys(normalizedFields);
+
+  const listAllowed = (values: readonly string[]): string =>
+    values.length > 0 ? values.join(", ") : "(none)";
+
+  function assertKnownRequestedFields(
+    request: QueryRequest<
+      Names<TMetrics>,
+      Names<TDimensions>,
+      TFilters,
+      TSortable,
+      TTable
+    >,
+  ): void {
+    if (!strictFields) return;
+
+    const invalidDimensions = (request.dimensions ?? []).filter(
+      (name) => !dimensionNamesSet.has(String(name)),
+    );
+    if (invalidDimensions.length > 0) {
+      throw new Error(
+        `Unknown dimensions: ${invalidDimensions.join(", ")}. Allowed dimensions: ${listAllowed(
+          dimensionNames,
+        )}`,
+      );
+    }
+
+    const invalidMetrics = (request.metrics ?? []).filter(
+      (name) => !metricNamesSet.has(String(name)),
+    );
+    if (invalidMetrics.length > 0) {
+      throw new Error(
+        `Unknown metrics: ${invalidMetrics.join(", ")}. Allowed metrics: ${listAllowed(
+          metricNames,
+        )}`,
+      );
+    }
+  }
 
   // Build field SQL expression with alias
   const buildFieldExpr = (field: FieldDef, defaultAlias: string): Sql => {
@@ -507,6 +557,19 @@ export function defineQueryModel<
   ): Sql[] {
     if (!filterParams) return [];
 
+    if (strictFilters) {
+      const unknownFilters = Object.keys(filterParams).filter(
+        (filterName) => !resolvedFilters[filterName],
+      );
+      if (unknownFilters.length > 0) {
+        throw new Error(
+          `Unknown filters: ${unknownFilters.join(", ")}. Allowed filters: ${listAllowed(
+            Object.keys(resolvedFilters),
+          )}`,
+        );
+      }
+    }
+
     const conditions: Sql[] = [];
     for (const [filterName, ops] of Object.entries(filterParams)) {
       const filterDef = resolvedFilters[filterName];
@@ -518,7 +581,9 @@ export function defineQueryModel<
         if (value === undefined) continue;
         if (!filterDef.operators.includes(op as FilterOperator)) {
           throw new Error(
-            `Operator '${op}' not allowed for filter '${filterName}'`,
+            `Operator '${op}' not allowed for filter '${filterName}'. Allowed operators: ${filterDef.operators.join(
+              ", ",
+            )}`,
           );
         }
         const condition = applyOperator(
@@ -565,7 +630,16 @@ export function defineQueryModel<
         }
 
         const fieldDef = normalizedFields[field];
-        if (!fieldDef) return empty;
+        if (!fieldDef) {
+          if (strictFields) {
+            throw new Error(
+              `Sort field '${field}' is configured as sortable but not defined in dimensions/metrics. Available fields: ${listAllowed(
+                allFieldNames,
+              )}`,
+            );
+          }
+          return empty;
+        }
 
         const alias = fieldDef.as ?? fieldDef.alias ?? String(field);
         const col =
@@ -653,7 +727,15 @@ export function defineQueryModel<
       TTable
     >,
   ): QueryParts {
+    assertKnownRequestedFields(request);
+
     const spec = resolveQuerySpec(request);
+    const hasExplicitSelection = !!(spec.select && spec.select.length > 0);
+    if (!hasExplicitSelection && selectPolicy === "explicitOnly") {
+      throw new Error(
+        "No dimensions or metrics selected. Provide request.dimensions and/or request.metrics, or set defaults.selectPolicy to 'allFields'.",
+      );
+    }
 
     const limitVal = Math.min(spec.limit ?? defaults.limit ?? 100, maxLimit);
     const offsetVal = spec.offset ?? (spec.page ?? 0) * limitVal;
@@ -662,7 +744,7 @@ export function defineQueryModel<
         sql`LIMIT ${limitVal} OFFSET ${offsetVal}`
       : paginate(limitVal, spec.page ?? 0);
 
-    const selectedFields = spec.select ?? Object.keys(normalizedFields);
+    const selectedFields = hasExplicitSelection ? spec.select! : allFieldNames;
     const selectedDimensions = selectedFields.filter((f) =>
       dimensionNamesSet.has(f),
     );
@@ -670,14 +752,14 @@ export function defineQueryModel<
 
     const dimensionParts = buildFieldList(
       normalizedDimensions,
-      selectedDimensions.length > 0 ? selectedDimensions : undefined,
+      hasExplicitSelection ? selectedDimensions : undefined,
     );
     const metricParts = buildFieldList(
       normalizedMetrics,
-      selectedMetrics.length > 0 ? selectedMetrics : undefined,
+      hasExplicitSelection ? selectedMetrics : undefined,
     );
 
-    const selectClause = buildSelectClause(spec.select);
+    const selectClause = buildSelectClause(selectedFields);
     const conditions = buildFilterConditions(spec.filters);
     const whereClause = conditions.length > 0 ? where(...conditions) : empty;
     const groupByPart = buildGroupByClause(spec);
