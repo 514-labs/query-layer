@@ -104,8 +104,23 @@ export const eventsModel = defineQueryModel({
 
   // Sortable fields
   sortable: ["totalAmount", "totalEvents"] as const,
+
+  // Optional defaults and strictness controls
+  defaults: {
+    limit: 100,
+    maxLimit: 1000,
+    selectPolicy: "allFields", // or "explicitOnly"
+    strictFields: false, // reject unknown dimensions/metrics/order fields
+    strictFilters: false, // reject unknown filter names
+  },
 });
 ```
+
+`selectPolicy` controls what happens when a request omits both `dimensions` and
+`metrics`:
+
+- `"allFields"` (default) - selects all configured dimensions + metrics
+- `"explicitOnly"` - throws and requires explicit selections
 
 ### 2. Build Queries
 
@@ -408,7 +423,13 @@ Creates a query model with type-safe query building.
 - `metrics` - Record of metric definitions
 - `filters` - Record of filter definitions
 - `sortable` - Array of sortable field names
-- `defaults` - Optional default query behavior
+- `defaults` - Optional default query behavior:
+  - `orderBy` - default sort
+  - `groupBy` - default dimensions for grouping
+  - `limit` / `maxLimit` - pagination defaults and cap
+  - `selectPolicy` - `"allFields"` (default) or `"explicitOnly"`
+  - `strictFields` - throw on unknown dimensions/metrics/order fields
+  - `strictFilters` - throw on unknown filter names
 
 **Returns:** QueryModel instance with:
 

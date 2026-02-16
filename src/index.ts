@@ -65,6 +65,7 @@ export type {
   SortDir,
   SqlValue,
   ColRef,
+  SelectPolicy,
 
   // Type helpers
   Names,
